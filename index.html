@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Metallic OMR Sheet Generator</title>
+  <!-- PDF download korar jonno html2pdf library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  
+  <style>
+    :root {
+      --metal-base: #d8dde3;
+      --metal-dark: #8c939d;
+      --omr-col-grey: #eaedf0;
+      --omr-border: #bbbec4;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 20%, #e2e6eb 0%, #aeb4be 100%);
+      min-height: 100vh;
+      padding: 30px 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #2c3138;
+    }
+
+    /* Metalomorphism UI Card Styling for Buttons */
+    .metallic-panel {
+      background: linear-gradient(145deg, #e4e9f0, #c3c9d4);
+      border-radius: 14px;
+      padding: 20px 28px;
+      width: 100%;
+      max-width: 1150px;
+      margin-bottom: 25px;
+      box-shadow: 
+        8px 8px 18px rgba(70, 75, 85, 0.4),
+        -6px -6px 14px rgba(255, 255, 255, 0.8),
+        inset 1px 1px 2px rgba(255, 255, 255, 0.9),
+        inset -1px -1px 2px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    /* Metal Shiny Button */
+    .metal-btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid #7c838d;
+      background: linear-gradient(180deg, #fbfcfd 0%, #ccd1d9 50%, #b2b8c2 100%);
+      box-shadow: 
+        0 4px 6px rgba(0, 0, 0, 0.25),
+        inset 0 1px 1px #ffffff,
+        inset 0 -1px 2px rgba(0, 0, 0, 0.3);
+      color: #222;
+      transition: all 0.15s ease-in-out;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .metal-btn:hover {
+      background: linear-gradient(180deg, #ffffff 0%, #d8dde5 50%, #c1c7d2 100%);
+      box-shadow: 0 5px 8px rgba(0, 0, 0, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .metal-btn:active {
+      transform: translateY(1px);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    .metal-btn.danger {
+      background: linear-gradient(180deg, #fbeeee 0%, #e2b6b6 50%, #c48f8f 100%);
+      border-color: #9c6c6c;
+      color: #4a1515;
+    }
+
+    /* OMR Sheet Design */
+    .sheet-wrapper {
+      background: #ffffff;
+      padding: 0;
+      border-radius: 4px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+      width: 100%;
+      max-width: 1150px;
+      overflow-x: auto;
+    }
+
+    #omr-sheet {
+      background: #ffffff;
+      width: 100%;
+      min-width: 950px;
+      border: 1.5px solid #000;
+      user-select: none;
+    }
+
+    /* Main Grid: 5 Columns */
+    .omr-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+    }
+
+    .omr-column {
+      border-right: 1.5px solid #555;
+    }
+
+    .omr-column:last-child {
+      border-right: none;
+    }
+
+    /* Column Alternating Background */
+    .col-white {
+      background-color: #ffffff;
+    }
+
+    .col-grey {
+      background-color: var(--omr-col-grey);
+    }
+
+    /* Each Question Row */
+    .omr-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 12px;
+      border-bottom: 1px solid var(--omr-border);
+      height: 40px;
+    }
+
+    .omr-column .omr-row:last-child {
+      border-bottom: none;
+    }
+
+    .q-number {
+      font-weight: 800;
+      font-size: 16px;
+      min-width: 25px;
+      color: #000;
+    }
+
+    .options-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Bubble Design */
+    .bubble {
+      width: 24px;
+      height: 24px;
+      border: 1.8px solid #000;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      color: #000;
+      background-color: transparent;
+      /* transition added */
+      transition: background-color 0.1s ease, color 0.1s ease;
+    }
+
+    .bubble:hover {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    /* Ekbare kalo solid britto (Text Invisible kora hoyeche) */
+    .bubble.filled {
+      background-color: #000000 !important;
+      color: transparent !important; /* Text transparent, tai ekbare solid black dekhabe */
+      border-color: #000000 !important;
+    }
+
+    /* Print View */
+    @media print {
+      body {
+        background: none;
+        padding: 0;
+      }
+      .metallic-panel {
+        display: none !important;
+      }
+      .sheet-wrapper {
+        box-shadow: none;
+        padding: 0;
+        margin: 0;
+        width: 100%;
+        max-width: 100%;
+      }
+      #omr-sheet {
+        width: 100%;
+      }
+      @page {
+        size: A4 landscape;
+        margin: 8mm;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Metalomorphism Controller Panel -->
+  <div class="metallic-panel">
+    <button class="metal-btn" onclick="downloadPDF()">Download PDF</button>
+    <button class="metal-btn danger" onclick="resetAnswers()">Reset</button>
+  </div>
+
+  <!-- OMR Sheet (Only Grid) -->
+  <div class="sheet-wrapper">
+    <div id="omr-sheet">
+      <!-- 5 Columns x 10 Rows (Total 50 Questions) -->
+      <div class="omr-grid" id="omrGrid"></div>
+    </div>
+  </div>
+
+  <script>
+    // 50 ti prosner layout setup
+    const columnRanges = [
+      { start: 1, end: 10, bgClass: 'col-white' },
+      { start: 11, end: 20, bgClass: 'col-grey' },
+      { start: 21, end: 30, bgClass: 'col-grey' },
+      { start: 31, end: 40, bgClass: 'col-white' },
+      { start: 41, end: 50, bgClass: 'col-grey' }
+    ];
+
+    const options = ['A', 'B', 'C', 'D'];
+    const selectedAnswers = {};
+
+    function generateGrid() {
+      const gridContainer = document.getElementById('omrGrid');
+      gridContainer.innerHTML = '';
+
+      columnRanges.forEach(col => {
+        const colDiv = document.createElement('div');
+        colDiv.className = `omr-column ${col.bgClass}`;
+
+        for (let q = col.start; q <= col.end; q++) {
+          const rowDiv = document.createElement('div');
+          rowDiv.className = 'omr-row';
+
+          // Question Number
+          const numSpan = document.createElement('span');
+          numSpan.className = 'q-number';
+          numSpan.innerText = q;
+          rowDiv.appendChild(numSpan);
+
+          // Options A, B, C, D
+          const optsGroup = document.createElement('div');
+          optsGroup.className = 'options-group';
+
+          options.forEach(opt => {
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            bubble.innerText = opt;
+            bubble.id = `q-${q}-${opt}`;
+
+            // Click korle kalo britto vorat hobe ba remove hobe
+            bubble.onclick = () => toggleAnswer(q, opt);
+
+            optsGroup.appendChild(bubble);
+          });
+
+          rowDiv.appendChild(optsGroup);
+          colDiv.appendChild(rowDiv);
+        }
+
+        gridContainer.appendChild(colDiv);
+      });
+    }
+
+    // Answer select ebong black fill korar logic
+    function toggleAnswer(qNum, opt) {
+      if (selectedAnswers[qNum] === opt) {
+        // Ager bar select thakle unselect hobe
+        delete selectedAnswers[qNum];
+        document.getElementById(`q-${qNum}-${opt}`).classList.remove('filled');
+      } else {
+        // Onno option filled thakle shoriye notun ta kalo kora
+        options.forEach(o => {
+          const el = document.getElementById(`q-${qNum}-${o}`);
+          if (el) el.classList.remove('filled');
+        });
+        selectedAnswers[qNum] = opt;
+        document.getElementById(`q-${qNum}-${opt}`).classList.add('filled');
+      }
+    }
+
+    // Shob britto reset kora
+    function resetAnswers() {
+      Object.keys(selectedAnswers).forEach(q => delete selectedAnswers[q]);
+      document.querySelectorAll('.bubble').forEach(b => b.classList.remove('filled'));
+    }
+
+    // Hubohu Landscape PDF Download
+    function downloadPDF() {
+      const sheet = document.getElementById('omr-sheet');
+      
+      const opt = {
+        margin: [5, 5, 5, 5],
+        filename: 'omr-sheet.pdf',
+        image: { type: 'jpeg', quality: 1.0 },
+        html2canvas: { scale: 3, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      };
+
+      html2pdf().set(opt).from(sheet).save();
+    }
+
+    // Shurute grid load kora
+    generateGrid();
+  </script>
+</body>
+</html>

@@ -170,19 +170,25 @@
       cursor: pointer;
       color: #000;
       background-color: transparent;
-      /* transition added */
       transition: background-color 0.1s ease, color 0.1s ease;
     }
 
-    .bubble:hover {
+    .bubble:not(.filled):not(.disabled):hover {
       background-color: rgba(0, 0, 0, 0.1);
     }
 
-    /* Ekbare kalo solid britto (Text Invisible kora hoyeche) */
+    /* Ekbare kalo solid britto (Text Invisible) */
     .bubble.filled {
       background-color: #000000 !important;
-      color: transparent !important; /* Text transparent, tai ekbare solid black dekhabe */
+      color: transparent !important;
       border-color: #000000 !important;
+      cursor: default; /* Click korle cursor hobe na */
+    }
+
+    /* Ekbar select hole baki option gulo disable kora */
+    .bubble.disabled {
+      cursor: not-allowed;
+      opacity: 0.7;
     }
 
     /* Print View */
@@ -268,7 +274,7 @@
             bubble.innerText = opt;
             bubble.id = `q-${q}-${opt}`;
 
-            // Click korle kalo britto vorat hobe ba remove hobe
+            // Click korle answer save hobe, jodi age theke kisu select na thake
             bubble.onclick = () => toggleAnswer(q, opt);
 
             optsGroup.appendChild(bubble);
@@ -282,27 +288,34 @@
       });
     }
 
-    // Answer select ebong black fill korar logic
+    // Answer select korar logic (Ekbar select korle ar change hobe na)
     function toggleAnswer(qNum, opt) {
-      if (selectedAnswers[qNum] === opt) {
-        // Ager bar select thakle unselect hobe
-        delete selectedAnswers[qNum];
-        document.getElementById(`q-${qNum}-${opt}`).classList.remove('filled');
-      } else {
-        // Onno option filled thakle shoriye notun ta kalo kora
-        options.forEach(o => {
-          const el = document.getElementById(`q-${qNum}-${o}`);
-          if (el) el.classList.remove('filled');
-        });
-        selectedAnswers[qNum] = opt;
-        document.getElementById(`q-${qNum}-${opt}`).classList.add('filled');
+      // Jodi agei ekta answer select kora thake, tahole r kichu hobe na (return)
+      if (selectedAnswers[qNum]) {
+        return; 
       }
+
+      // Prothombar click korle answer save hobe ebong kalo hobe
+      selectedAnswers[qNum] = opt;
+      const selectedBubble = document.getElementById(`q-${qNum}-${opt}`);
+      selectedBubble.classList.add('filled');
+
+      // Oi prosner baki option gulo ke visually disabled kore dewa hobe
+      options.forEach(o => {
+        if (o !== opt) {
+          const el = document.getElementById(`q-${qNum}-${o}`);
+          if (el) el.classList.add('disabled');
+        }
+      });
     }
 
-    // Shob britto reset kora
+    // Shob britto reset kora (Shuru theke abr click kora jabe)
     function resetAnswers() {
       Object.keys(selectedAnswers).forEach(q => delete selectedAnswers[q]);
-      document.querySelectorAll('.bubble').forEach(b => b.classList.remove('filled'));
+      document.querySelectorAll('.bubble').forEach(b => {
+        b.classList.remove('filled');
+        b.classList.remove('disabled');
+      });
     }
 
     // Hubohu Landscape PDF Download
